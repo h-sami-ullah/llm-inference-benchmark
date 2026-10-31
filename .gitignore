@@ -1,0 +1,27 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+build/
+dist/
+.venv/
+venv/
+
+# Notebooks: ignore all, then whitelist the driver
+*.ipynb
+!notebooks/inference_optimization.ipynb
+.ipynb_checkpoints/
+
+# Data / artifacts / scratch
+video_output/
+*.json
+nul
+build_video.py
+voiceover_script.md
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/

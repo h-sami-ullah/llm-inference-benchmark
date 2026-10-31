@@ -1,0 +1,11 @@
+torch
+transformers
+accelerate
+vllm
+autoawq
+openai
+requests
+pandas
+matplotlib
+numpy
+nvidia-ml-py3
