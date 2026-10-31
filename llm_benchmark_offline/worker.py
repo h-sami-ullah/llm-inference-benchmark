@@ -92,8 +92,11 @@ def run_task(task: str) -> List[BenchmarkResult]:
             quantization="awq",
             gpu_memory_utilization=0.90,
             max_model_len=4096,
-            spec_model=DRAFT_MODEL_ID,
-            spec_tokens=4,
+            speculative_config={
+                "method": "draft_model",
+                "model": DRAFT_MODEL_ID,
+                "num_speculative_tokens": 4,
+            },
         )
         results = [benchmark_vllm(llm, TEST_PROMPTS, name="vLLM + AWQ + Spec")]
 
@@ -104,8 +107,11 @@ def run_task(task: str) -> List[BenchmarkResult]:
             gpu_memory_utilization=0.90,
             max_model_len=4096,
             enable_prefix_caching=True,
-            spec_model=DRAFT_MODEL_ID,
-            spec_tokens=4,
+            speculative_config={
+                "method": "draft_model",
+                "model": DRAFT_MODEL_ID,
+                "num_speculative_tokens": 4,
+            },
         )
         results = [benchmark_vllm(llm, TEST_PROMPTS, name="Combined Stack")]
 
