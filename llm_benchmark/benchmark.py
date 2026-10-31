@@ -41,20 +41,20 @@ def clear_memory() -> None:
 
 
 def free_model(model) -> None:
-    """Release a model's GPU memory, handling ``device_map="auto"`` dispatch hooks.
+    """Release a model's GPU memory.
 
-    A plain ``del model`` + ``torch.cuda.empty_cache()`` leaves the weights
-    resident on the GPU when the model was loaded with ``device_map="auto"``
-    (accelerate keeps dispatch hooks alive). ``accelerate.utils.release_memory``
-    is the official way to move such a model off the GPU and free its memory; we
-    fall back to ``model.to("cpu")`` when accelerate is unavailable.
+    Moves every parameter and buffer to CPU in-place (dropping the GPU tensors)
+    before deleting. This is robust regardless of ``device_map`` dispatch hooks,
+    lingering references, or the model object still being referenced by the
+    caller — the GPU tensors are released as soon as ``p.data`` is reassigned.
     """
     if model is None:
         return
     try:
-        from accelerate.utils import release_memory
-
-        release_memory(model)
+        for p in model.parameters():
+            p.data = p.data.detach().to("cpu")
+        for b in model.buffers():
+            b.data = b.data.detach().to("cpu")
     except Exception:
         try:
             model.to("cpu")

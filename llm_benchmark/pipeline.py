@@ -45,6 +45,7 @@ def run_hf_baseline(results: List[BenchmarkResult]) -> BenchmarkResult:
     print(f"Memory: {result.memory_gb:.2f} GB")
 
     free_model(model)
+    del model
     del tokenizer
     clear_memory()
     print(f"Memory after cleanup: {gpu_memory_report()}")
