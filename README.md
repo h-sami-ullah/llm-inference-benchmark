@@ -37,8 +37,12 @@ notebooks/
 ## Install
 
 Requires Python 3.11+. The package's core dependencies are lightweight and
-portable; the heavy GPU packages (`torch`, `vllm`, `autoawq`, ...) are optional
-because they need platform-specific CUDA wheels.
+portable; the heavy GPU packages (`torch`, `vllm`, ...) are optional because
+they need platform-specific CUDA wheels.
+
+> Note: AWQ quantization is done natively by vLLM (`quantization="awq"`), so the
+> `autoawq` package is **not** required for benchmarking. Only install it
+> separately if you need to *create* AWQ-quantized models yourself.
 
 ### Core only (works anywhere, no GPU build)
 

@@ -33,7 +33,6 @@ gpu = [
     "transformers",
     "accelerate",
     "vllm[bench]",
-    "autoawq",
 ]
 
 [tool.setuptools.packages.find]
