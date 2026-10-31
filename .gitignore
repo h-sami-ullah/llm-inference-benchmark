@@ -8,9 +8,9 @@ dist/
 .venv/
 venv/
 
-# Notebooks: ignore all, then whitelist the driver
+# Notebooks: ignore all, then whitelist the drivers
 *.ipynb
-!notebooks/inference_optimization.ipynb
+!notebooks/*.ipynb
 .ipynb_checkpoints/
 
 # Data / artifacts / scratch
