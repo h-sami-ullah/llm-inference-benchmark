@@ -1,0 +1,65 @@
+[
+    {
+        "name": "HF Baseline",
+        "ttft_ms": 74.40502893344576,
+        "tps": 72.63049494020431,
+        "tpm": 4357.829696412259,
+        "memory_gb": 7.11163904,
+        "total_tokens": 454,
+        "total_time_s": 6.262442136333145
+    },
+    {
+        "name": "vLLM Server (FP16)",
+        "ttft_ms": 78.29374893329562,
+        "tps": 120.6149953185918,
+        "tpm": 7236.899719115508,
+        "memory_gb": 13.363249152,
+        "total_tokens": 458,
+        "total_time_s": 3.797237314666745
+    },
+    {
+        "name": "vLLM Server + AWQ",
+        "ttft_ms": 43.35066133341267,
+        "tps": 271.76499083855344,
+        "tpm": 16305.899450313207,
+        "memory_gb": 12.704743424,
+        "total_tokens": 442,
+        "total_time_s": 1.6265841803333387
+    },
+    {
+        "name": "vLLM Server + AWQ + Flash",
+        "ttft_ms": 39.478642666431874,
+        "tps": 237.27197280950634,
+        "tpm": 14236.31836857038,
+        "memory_gb": 12.704743424,
+        "total_tokens": 768,
+        "total_time_s": 3.236865372333341
+    },
+    {
+        "name": "Prefix Cache (warm)",
+        "ttft_ms": 55.309874799968384,
+        "tps": 371.23841924857436,
+        "tpm": 22274.305154914462,
+        "memory_gb": 14.269218816,
+        "total_tokens": 640,
+        "total_time_s": 1.723959501000536
+    },
+    {
+        "name": "vLLM Server + AWQ + Spec",
+        "ttft_ms": 311.95122980000934,
+        "tps": 98.05135922339704,
+        "tpm": 5883.081553403823,
+        "memory_gb": 14.344716288,
+        "total_tokens": 442,
+        "total_time_s": 4.510502754333477
+    },
+    {
+        "name": "Combined Stack",
+        "ttft_ms": 320.91579700002814,
+        "tps": 102.66180857838133,
+        "tpm": 6159.708514702879,
+        "memory_gb": 14.841741312,
+        "total_tokens": 447,
+        "total_time_s": 4.354430975665916
+    }
+]
