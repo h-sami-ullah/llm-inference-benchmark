@@ -1,5 +1,6 @@
 """Orchestrate the full optimization benchmark pipeline."""
 
+import json
 from typing import List
 
 import torch
@@ -26,6 +27,14 @@ from .hf import run_hf_baseline_isolated
 from .server import start_vllm_server, stop_server, wait_for_server
 from .server_benchmark import benchmark_server
 from .storage import save_results_to_file
+
+# vLLM >= 0.27 replaced --speculative-model/--num-speculative-tokens with a
+# single --speculative-config JSON argument.
+SPECULATIVE_CONFIG = json.dumps({
+    "method": "draft_model",
+    "model": DRAFT_MODEL_ID,
+    "num_speculative_tokens": 4,
+})
 
 
 def run_hf_baseline(results: List[BenchmarkResult]) -> BenchmarkResult:
@@ -139,8 +148,7 @@ def run_speculative(results: List[BenchmarkResult]) -> None:
         quantization="awq",
         gpu_memory_utilization=0.90,
         max_model_len=4096,
-        speculative_model=DRAFT_MODEL_ID,
-        num_speculative_tokens=4,
+        speculative_config=SPECULATIVE_CONFIG,
     )
     wait_for_server(log_path=proc.log_path)
 
@@ -170,8 +178,7 @@ def run_combined(results: List[BenchmarkResult]) -> BenchmarkResult:
         gpu_memory_utilization=0.90,
         max_model_len=4096,
         enable_prefix_caching=True,
-        speculative_model=DRAFT_MODEL_ID,
-        num_speculative_tokens=4,
+        speculative_config=SPECULATIVE_CONFIG,
     )
     wait_for_server(log_path=proc.log_path)
 
