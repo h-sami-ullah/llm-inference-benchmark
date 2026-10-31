@@ -25,11 +25,14 @@ llm_benchmark/
   server_benchmark.py  # OpenAI-client benchmark (TTFT / TPS / TPM / memory)
   pipeline.py          # run_full_pipeline() orchestrator (server)
 llm_benchmark_offline/
-  vllm_offline.py      # offline LLM.generate() benchmark helpers
-  pipeline.py          # run_full_pipeline() orchestrator (offline)
+  vllm_offline.py          # offline LLM.generate() benchmark helpers
+  pipeline.py              # run_full_pipeline() orchestrator (offline)
+  benchmark_throughput.py  # vLLM's offline throughput benchmark (vendored + CLI)
+  benchmark_latency.py     # vLLM's single-batch latency benchmark (vendored + CLI)
 llm_benchmark/serving/
   backend_request_func.py  # vLLM's async request functions (vendored)
   benchmark_serving.py     # vLLM's official serving benchmark (vendored + CLI)
+  sonnet.txt               # poem-lines dataset for --dataset-name sonnet
 notebooks/
   inference_optimization.ipynb          # thin driver (server)
   inference_optimization_offline.ipynb  # thin driver (offline)
@@ -112,6 +115,28 @@ After `pip install -e .`, a console script is also available:
 It reports TTFT, TPOT (time-per-output-token), ITL (inter-token latency), and
 request/input/output throughput with mean/median/p99, supporting `sharegpt`,
 `sonnet`, and `random` datasets plus configurable Poisson request rates.
+The bundled `sonnet.txt` is used automatically for `dataset_name="sonnet"`.
+
+## Official vLLM offline benchmarks
+
+vLLM's offline (in-process `LLM`) throughput and latency scripts are also
+vendored under `llm_benchmark_offline`:
+
+```bash
+# Offline throughput (requests/s and tokens/s), ShareGPT or synthetic input
+python -m llm_benchmark_offline.benchmark_throughput \
+    --backend vllm --model Qwen/Qwen2.5-3B-Instruct \
+    --input-len 1024 --output-len 128 --num-prompts 100 \
+    --quantization awq
+
+# Single-batch latency (percentiles of end-to-end latency)
+python -m llm_benchmark_offline.benchmark_latency \
+    --model Qwen/Qwen2.5-3B-Instruct --batch-size 8 \
+    --input-len 32 --output-len 128
+```
+
+Or via the console scripts: `llm-benchmark-throughput` and
+`llm-benchmark-latency`.
 
 ## Notes
 

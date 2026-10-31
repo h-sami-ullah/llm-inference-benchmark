@@ -14,11 +14,14 @@ Usage:
 """
 
 import argparse
+import os
 from typing import List, Optional
 
 from . import benchmark_serving
 
 __all__ = ["benchmark_model", "benchmark_serving"]
+
+SONNET_DATASET = os.path.join(os.path.dirname(__file__), "sonnet.txt")
 
 
 def _namespace(
@@ -30,6 +33,7 @@ def _namespace(
     model: str,
     tokenizer: Optional[str],
     dataset_name: str,
+    dataset_path: Optional[str],
     num_prompts: int,
     random_input_len: int,
     random_output_len: int,
@@ -49,7 +53,7 @@ def _namespace(
         endpoint=endpoint,
         dataset=None,
         dataset_name=dataset_name,
-        dataset_path=None,
+        dataset_path=dataset_path,
         model=model,
         tokenizer=tokenizer,
         best_of=best_of,
@@ -78,6 +82,7 @@ def benchmark_model(
     port: int = 8000,
     backend: str = "vllm",
     dataset_name: str = "random",
+    dataset_path: Optional[str] = None,
     num_prompts: int = 100,
     random_input_len: int = 1024,
     random_output_len: int = 128,
@@ -97,6 +102,9 @@ def benchmark_model(
     """
     from llm_benchmark.server import start_vllm_server, stop_server, wait_for_server
 
+    if dataset_name == "sonnet" and dataset_path is None:
+        dataset_path = SONNET_DATASET
+
     proc = start_vllm_server(model_id, port=port, **server_kwargs)
     try:
         wait_for_server(log_path=proc.log_path)
@@ -108,6 +116,7 @@ def benchmark_model(
             model=model_id,
             tokenizer=None,
             dataset_name=dataset_name,
+            dataset_path=dataset_path,
             num_prompts=num_prompts,
             random_input_len=random_input_len,
             random_output_len=random_output_len,

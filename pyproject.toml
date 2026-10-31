@@ -27,6 +27,11 @@ dependencies = [
 
 [project.scripts]
 llm-benchmark-serve = "llm_benchmark.serving.benchmark_serving:cli"
+llm-benchmark-throughput = "llm_benchmark_offline.benchmark_throughput:cli"
+llm-benchmark-latency = "llm_benchmark_offline.benchmark_latency:cli"
+
+[tool.setuptools.package-data]
+"llm_benchmark.serving" = ["sonnet.txt"]
 
 [tool.setuptools.packages.find]
 include = ["llm_benchmark*"]
