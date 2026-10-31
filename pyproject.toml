@@ -24,16 +24,10 @@ dependencies = [
     "huggingface-hub",
 ]
 
-[project.optional-dependencies]
-# Install with a CUDA-capable PyTorch index, e.g.:
-#   uv sync --extra gpu --torch-backend=auto
-#   pip install -e '.[gpu]'
-gpu = [
-    "torch",
-    "transformers",
-    "accelerate",
-    "vllm[bench]",
-]
+# NOTE: vLLM / PyTorch are intentionally NOT declared as Python dependencies.
+# vLLM must be installed separately with a CUDA-aware torch backend
+# (`uv pip install vllm --torch-backend=auto`), otherwise `uv sync`/pip tries
+# to resolve a compatible vLLM wheel (or build one from source) and fails.
 
 [tool.setuptools.packages.find]
 include = ["llm_benchmark*"]

@@ -36,37 +36,29 @@ notebooks/
 
 ## Install
 
-Requires Python 3.11+. The package's core dependencies are lightweight and
-portable; the heavy GPU packages (`torch`, `vllm`, ...) are optional because
-they need platform-specific CUDA wheels.
+Requires Python 3.11+.
+
+vLLM and PyTorch are CUDA packages that must be installed with a matching
+CUDA backend, so they are **not** Python dependencies here (declaring them makes
+`uv sync`/`pip` try to resolve or build a vLLM wheel and fail). Install them
+separately using vLLM's recommended command.
 
 > Note: AWQ quantization is done natively by vLLM (`quantization="awq"`), so the
 > `autoawq` package is **not** required for benchmarking. Only install it
 > separately if you need to *create* AWQ-quantized models yourself.
 
-### Core only (works anywhere, no GPU build)
+### 1. Core package (light, works anywhere)
 
 ```bash
-uv sync          # or: pip install -e .
+uv sync                 # or: pip install -e .
 ```
 
-### With GPU support
-
-Use a CUDA-capable PyTorch index so vLLM installs as a wheel instead of building
-from source (which otherwise fails with "Cannot find CUDA_HOME"):
+### 2. GPU stack (vLLM + CUDA PyTorch + transformers/accelerate)
 
 ```bash
-# uv
-uv sync --extra gpu --torch-backend=auto
-
-# pip
-pip install -e '.[gpu]'
-```
-
-Then pre-fetch precompiled kernels for faster startup:
-
-```bash
-vllm download-kernels
+uv pip install vllm --torch-backend=auto
+uv pip install accelerate
+vllm download-kernels   # optional: precompiled kernels for faster startup
 ```
 
 The plain startup command is just `vllm serve <model>` (OpenAI-compatible,
