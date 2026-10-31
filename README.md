@@ -180,9 +180,40 @@ For production load testing with live progress and automatic report generation,
 see [GuideLLM](https://github.com/vllm-project/guidellm)
 (`pip install "guidellm[recommended]"`).
 
+## Results
+
+Measured with the server (online) pipeline on a Google Colab **T4 (16 GB)**, model
+`Qwen/Qwen2.5-3B-Instruct` (AWQ variant where noted), draft model
+`Qwen/Qwen2.5-0.5B-Instruct`, CUDA graphs enabled (`enforce_eager=False`). The pipeline writes the raw data to
+`benchmark_results_qwen_server.json`.
+
+| Section | TTFT (ms) | TPS | TPM | Memory (GB) |
+| --- | ---: | ---: | ---: | ---: |
+| HF Baseline | 74.4 | 72.6 | 4,358 | 7.11 |
+| vLLM Server (FP16) | 78.3 | 120.6 | 7,237 | 13.36 |
+| vLLM Server + AWQ | 43.4 | **271.8** | 16,306 | 12.70 |
+| vLLM Server + AWQ + Flash | 39.5 | 237.3 | 14,236 | 12.70 |
+| Prefix Cache (warm) | 55.3 | **371.2** | 22,274 | 14.27 |
+| vLLM Server + AWQ + Spec | 311.9 | 98.1 | 5,883 | 14.34 |
+| Combined Stack | 320.9 | 102.7 | 6,160 | 14.84 |
+
+Key takeaways:
+
+- **vLLM FP16** is ~1.7× the HuggingFace baseline on throughput — continuous batching
+  and PagedAttention are always on.
+- **AWQ 4-bit** is the biggest single win: ~2.3× FP16 throughput at lower memory.
+- **Flash Attention** keeps memory flat as sequences get longer.
+- **Prefix caching** is the fastest for shared prompts (system prompt / RAG context).
+- **Speculative decoding** with a 0.5B draft against a 3B target is *slower* than plain
+  AWQ (98 vs 272 TPS): the draft's low acceptance rate costs more than it saves. A
+  well-matched draft is required for a win.
+
 ## Notes
 
 - Requires a CUDA GPU (defaults to device 0).
+- The HuggingFace baseline runs in an isolated subprocess (`llm_benchmark/hf_worker.py`)
+  so its GPU memory is reclaimed by the OS before vLLM starts — avoid holding HF and
+  vLLM in the same process.
 - Server results persist to `/content/benchmark_results_qwen_server.json`
   (override `LLM_BENCHMARK_RESULTS_PATH`); offline results to
   `/content/benchmark_results_qwen.json` (override `LLM_BENCHMARK_OFFLINE_RESULTS_PATH`).
