@@ -41,23 +41,42 @@ def clear_memory() -> None:
 
 
 def free_model(model) -> None:
-    """Release a model's GPU memory by moving it to CPU, then deleting it.
+    """Release a model's GPU memory, handling ``device_map="auto"`` dispatch hooks.
 
-    A plain ``del model`` + ``torch.cuda.empty_cache()`` often leaves the weights
-    resident on the GPU (especially with ``device_map="auto"``/accelerate, which
-    keeps dispatch hooks alive). Moving to CPU first guarantees the GPU tensors
-    are freed before the next stage (e.g. launching vLLM) starts.
+    A plain ``del model`` + ``torch.cuda.empty_cache()`` leaves the weights
+    resident on the GPU when the model was loaded with ``device_map="auto"``
+    (accelerate keeps dispatch hooks alive). ``accelerate.utils.release_memory``
+    is the official way to move such a model off the GPU and free its memory; we
+    fall back to ``model.to("cpu")`` when accelerate is unavailable.
     """
     if model is None:
         return
     try:
-        model.to("cpu")
+        from accelerate.utils import release_memory
+
+        release_memory(model)
     except Exception:
-        pass
+        try:
+            model.to("cpu")
+        except Exception:
+            pass
     del model
     gc.collect()
     torch.cuda.empty_cache()
     torch.cuda.synchronize()
+
+
+def gpu_memory_report() -> str:
+    """Human-readable GPU memory breakdown (allocated / reserved / NVML used)."""
+    try:
+        allocated = torch.cuda.memory_allocated() / 1e9
+        reserved = torch.cuda.memory_reserved() / 1e9
+    except Exception:
+        allocated = reserved = float("nan")
+    return (
+        f"allocated {allocated:.2f} GB, reserved {reserved:.2f} GB, "
+        f"nvml used {get_memory_usage():.2f} GB"
+    )
 
 
 def set_seed(seed: int = 42) -> None:

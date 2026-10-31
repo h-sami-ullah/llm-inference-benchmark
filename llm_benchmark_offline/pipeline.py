@@ -6,7 +6,14 @@ from typing import List
 import torch
 from vllm import LLM
 
-from llm_benchmark.benchmark import BenchmarkResult, clear_memory, format_ttft, free_model, get_memory_usage
+from llm_benchmark.benchmark import (
+    BenchmarkResult,
+    clear_memory,
+    format_ttft,
+    free_model,
+    get_memory_usage,
+    gpu_memory_report,
+)
 from llm_benchmark.config import (
     DRAFT_MODEL_ID,
     LONG_PROMPTS,
@@ -46,7 +53,7 @@ def run_hf_baseline(results: List[BenchmarkResult]) -> BenchmarkResult:
     free_model(model)
     del tokenizer
     clear_memory()
-    print(f"Memory after cleanup: {get_memory_usage():.2f} GB")
+    print(f"Memory after cleanup: {gpu_memory_report()}")
     return result
 
 

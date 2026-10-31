@@ -12,6 +12,7 @@ from .benchmark import (
     format_ttft,
     free_model,
     get_memory_usage,
+    gpu_memory_report,
     set_seed,
 )
 from .config import setup_environment
@@ -31,6 +32,7 @@ __all__ = [
     "free_model",
     "get_client",
     "get_memory_usage",
+    "gpu_memory_report",
     "load_hf_model",
     "load_results_from_file",
     "run_full_pipeline",
