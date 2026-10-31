@@ -187,6 +187,8 @@ Measured with the server (online) pipeline on a Google Colab **T4 (16 GB)**, mod
 `Qwen/Qwen2.5-0.5B-Instruct`, CUDA graphs enabled (`enforce_eager=False`). The pipeline writes the raw data to
 `benchmark_results_qwen_server.json`.
 
+![Benchmark results: throughput, TTFT, and GPU memory per section](assets/results.png)
+
 | Section | TTFT (ms) | TPS | TPM | Memory (GB) |
 | --- | ---: | ---: | ---: | ---: |
 | HF Baseline | 74.4 | 72.6 | 4,358 | 7.11 |
