@@ -48,11 +48,13 @@ def load_hf_model(model_id: str) -> Tuple[AutoModelForCausalLM, AutoTokenizer]:
     if tokenizer.pad_token is None:
         tokenizer.pad_token = tokenizer.eos_token
 
+    # Load directly onto the GPU (no `device_map="auto"`). `device_map` uses
+    # accelerate dispatch hooks that prevent `del model` + `empty_cache()` from
+    # actually freeing the GPU tensors, which OOMs the subsequent vLLM server.
     model = AutoModelForCausalLM.from_pretrained(
         model_id,
         dtype=torch.float16,
-        device_map="auto",
-    )
+    ).to("cuda")
     return model, tokenizer
 
 
