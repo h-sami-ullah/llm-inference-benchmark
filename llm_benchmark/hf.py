@@ -112,7 +112,6 @@ def benchmark_hf(
         )
 
     torch.cuda.synchronize()
-    torch.cuda.reset_peak_memory_stats()
 
     all_ttft = []
     all_tps = []

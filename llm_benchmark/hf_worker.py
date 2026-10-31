@@ -11,6 +11,8 @@ import argparse
 import json
 from dataclasses import asdict
 
+import torch
+
 from .benchmark import format_ttft
 from .config import TEST_PROMPTS, setup_environment
 from .hf import benchmark_hf, load_hf_model
@@ -25,14 +27,19 @@ def main() -> None:
 
     setup_environment()
 
+    baseline = torch.cuda.memory_allocated() / 1e9
+    torch.cuda.reset_peak_memory_stats()
+
     model, tokenizer = load_hf_model(args.model)
     result = benchmark_hf(model, tokenizer, TEST_PROMPTS, num_runs=args.num_runs)
+    result.peak_memory_gb = max(0.0, torch.cuda.max_memory_allocated() / 1e9 - baseline)
 
     print("\n--- HuggingFace Baseline Results ---")
     print(f"TTFT: {format_ttft(result.ttft_ms)}")
     print(f"TPS: {result.tps:.1f} tokens/sec")
     print(f"TPM: {result.tpm:.0f} tokens/min")
     print(f"Memory: {result.memory_gb:.2f} GB")
+    print(f"Peak VRAM (torch): {result.peak_memory_gb:.2f} GB")
 
     with open(args.output, "w") as f:
         json.dump(asdict(result), f)

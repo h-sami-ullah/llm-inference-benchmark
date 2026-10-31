@@ -35,7 +35,10 @@ def _llm(**kwargs) -> LLM:
 
 
 def run_task(task: str) -> List[BenchmarkResult]:
+    baseline = torch.cuda.memory_allocated() / 1e9
     torch.cuda.reset_peak_memory_stats()
+
+    results: List[BenchmarkResult]
 
     if task == "fp16":
         llm = _llm(
@@ -46,9 +49,9 @@ def run_task(task: str) -> List[BenchmarkResult]:
             tensor_parallel_size=1,
             distributed_executor_backend="uni",
         )
-        return [benchmark_vllm(llm, TEST_PROMPTS, name="vLLM (FP16)")]
+        results = [benchmark_vllm(llm, TEST_PROMPTS, name="vLLM (FP16)")]
 
-    if task == "awq":
+    elif task == "awq":
         llm = _llm(
             model=MODEL_ID_AWQ,
             max_model_len=2048,
@@ -58,9 +61,9 @@ def run_task(task: str) -> List[BenchmarkResult]:
             tensor_parallel_size=1,
             distributed_executor_backend="uni",
         )
-        return [benchmark_vllm(llm, TEST_PROMPTS, name="vLLM + AWQ")]
+        results = [benchmark_vllm(llm, TEST_PROMPTS, name="vLLM + AWQ")]
 
-    if task == "flash":
+    elif task == "flash":
         llm = _llm(
             model=MODEL_ID_AWQ,
             max_model_len=2048,
@@ -70,9 +73,9 @@ def run_task(task: str) -> List[BenchmarkResult]:
             tensor_parallel_size=1,
             distributed_executor_backend="uni",
         )
-        return [benchmark_vllm(llm, LONG_PROMPTS, max_new_tokens=256, name="vLLM + AWQ + Flash")]
+        results = [benchmark_vllm(llm, LONG_PROMPTS, max_new_tokens=256, name="vLLM + AWQ + Flash")]
 
-    if task == "prefix":
+    elif task == "prefix":
         llm = _llm(
             model=MODEL_ID_AWQ,
             quantization="awq",
@@ -81,9 +84,9 @@ def run_task(task: str) -> List[BenchmarkResult]:
             enable_prefix_caching=True,
         )
         r = benchmark_prefix_caching(llm, PREFIX_PROMPTS, SHARED_PREFIX)
-        return [r["cold"], r["warm"]]
+        results = [r["cold"], r["warm"]]
 
-    if task == "spec":
+    elif task == "spec":
         llm = _llm(
             model=MODEL_ID_AWQ,
             quantization="awq",
@@ -92,9 +95,9 @@ def run_task(task: str) -> List[BenchmarkResult]:
             spec_model=DRAFT_MODEL_ID,
             spec_tokens=4,
         )
-        return [benchmark_vllm(llm, TEST_PROMPTS, name="vLLM + AWQ + Spec")]
+        results = [benchmark_vllm(llm, TEST_PROMPTS, name="vLLM + AWQ + Spec")]
 
-    if task == "combined":
+    elif task == "combined":
         llm = _llm(
             model=MODEL_ID_AWQ,
             quantization="awq",
@@ -104,9 +107,15 @@ def run_task(task: str) -> List[BenchmarkResult]:
             spec_model=DRAFT_MODEL_ID,
             spec_tokens=4,
         )
-        return [benchmark_vllm(llm, TEST_PROMPTS, name="Combined Stack")]
+        results = [benchmark_vllm(llm, TEST_PROMPTS, name="Combined Stack")]
 
-    raise ValueError(f"Unknown task: {task}")
+    else:
+        raise ValueError(f"Unknown task: {task}")
+
+    peak = max(0.0, torch.cuda.max_memory_allocated() / 1e9 - baseline)
+    for r in results:
+        r.peak_memory_gb = peak
+    return results
 
 
 def main() -> None:
@@ -123,7 +132,7 @@ def main() -> None:
 
     for r in results:
         print(f"[{r.name}] TTFT {format_ttft(r.ttft_ms)}, TPS {r.tps:.1f}, "
-              f"TPM {r.tpm:.0f}, Memory {r.memory_gb:.2f} GB")
+              f"TPM {r.tpm:.0f}, Memory {r.memory_gb:.2f} GB, Peak {r.peak_memory_gb:.2f} GB")
     print(f"Peak VRAM (torch): allocated {peak_alloc:.2f} GB, reserved {peak_res:.2f} GB")
 
     with open(args.output, "w") as f:

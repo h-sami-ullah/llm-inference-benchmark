@@ -20,6 +20,7 @@ class BenchmarkResult:
     memory_gb: float
     total_tokens: int
     total_time_s: float
+    peak_memory_gb: float = 0.0
 
 
 def get_memory_usage() -> float:
@@ -103,6 +104,7 @@ def display_results(results: List[BenchmarkResult]) -> None:
         "tps": "{:.1f}",
         "tpm": "{:.0f}",
         "memory_gb": "{:.2f}",
+        "peak_memory_gb": "{:.2f}",
         "total_time_s": "{:.2f}",
     }).background_gradient(subset=["tps", "tpm"], cmap="Greens")
-      .background_gradient(subset=["ttft_ms", "memory_gb"], cmap="Reds_r"))
+      .background_gradient(subset=["ttft_ms", "memory_gb", "peak_memory_gb"], cmap="Reds_r"))
