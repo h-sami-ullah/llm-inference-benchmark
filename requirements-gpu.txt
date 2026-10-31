@@ -1,5 +1,5 @@
 torch
 transformers
 accelerate
-vllm
+vllm[bench]
 autoawq

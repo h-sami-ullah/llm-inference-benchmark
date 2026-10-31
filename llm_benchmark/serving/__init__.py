@@ -1,133 +1,64 @@
-"""vLLM's official online-serving benchmark, vendored and wired to this package.
+"""Online serving benchmark via vLLM's built-in `vllm bench serve` CLI.
 
-Contains two files vendored from the vLLM project (same commit/version so they
-stay compatible):
+vLLM ships a built-in benchmark CLI (`pip install "vllm[bench]"`):
 
-- ``backend_request_func.py`` — async request functions + request dataclasses.
-- ``benchmark_serving.py`` — the throughput/latency benchmark CLI.
+- ``vllm bench serve``      — API server throughput/latency (online)
+- ``vllm bench throughput`` — engine throughput (offline)
+- ``vllm bench latency``    — single-batch latency (offline)
+- ``vllm bench forward``    — model forward-pass timing
 
-Usage:
-
-- CLI:      ``python -m llm_benchmark.serving.benchmark_serving --help``
-- Console:  ``llm-benchmark-serve --help`` (after ``pip install -e .``)
-- Programmatic: :func:`benchmark_model` (starts a server, benchmarks, tears down).
+This module wraps ``vllm bench serve`` with :func:`benchmark_model`, which
+starts/stops the server for you. It replaces the previously vendored
+``benchmark_serving.py`` (obsolete in current vLLM).
 """
 
-import argparse
-import os
-from typing import List, Optional
+import subprocess
+from typing import Optional, Sequence
 
-from . import benchmark_serving
+from llm_benchmark.server import start_vllm_server, stop_server, vllm_cli, wait_for_server
 
-__all__ = ["benchmark_model", "benchmark_serving"]
-
-SONNET_DATASET = os.path.join(os.path.dirname(__file__), "sonnet.txt")
+__all__ = ["benchmark_model"]
 
 
-def _namespace(
-    *,
-    backend: str,
-    host: str,
-    port: int,
-    endpoint: str,
-    model: str,
-    tokenizer: Optional[str],
-    dataset_name: str,
-    dataset_path: Optional[str],
-    num_prompts: int,
-    random_input_len: int,
-    random_output_len: int,
-    request_rate: float,
-    best_of: int,
-    use_beam_search: bool,
-    trust_remote_code: bool,
-    save_result: bool,
-    result_dir: Optional[str],
-    seed: int,
-) -> argparse.Namespace:
-    return argparse.Namespace(
-        backend=backend,
-        base_url=None,
-        host=host,
-        port=port,
-        endpoint=endpoint,
-        dataset=None,
-        dataset_name=dataset_name,
-        dataset_path=dataset_path,
-        model=model,
-        tokenizer=tokenizer,
-        best_of=best_of,
-        use_beam_search=use_beam_search,
-        num_prompts=num_prompts,
-        sharegpt_output_len=None,
-        sonnet_input_len=550,
-        sonnet_output_len=150,
-        sonnet_prefix_len=200,
-        random_input_len=random_input_len,
-        random_output_len=random_output_len,
-        random_range_ratio=1.0,
-        request_rate=request_rate,
-        seed=seed,
-        trust_remote_code=trust_remote_code,
-        disable_tqdm=False,
-        save_result=save_result,
-        metadata=None,
-        result_dir=result_dir,
-        result_filename=None,
-    )
+def bench_cmd(subcommand: str, *args: str) -> Sequence[str]:
+    """Build a ``vllm bench <subcommand> <args...>`` command."""
+    return vllm_cli("bench", subcommand, *args)
 
 
 def benchmark_model(
     model_id: str,
     port: int = 8000,
-    backend: str = "vllm",
-    dataset_name: str = "random",
-    dataset_path: Optional[str] = None,
-    num_prompts: int = 100,
-    random_input_len: int = 1024,
-    random_output_len: int = 128,
-    request_rate: float = float("inf"),
-    best_of: int = 1,
-    use_beam_search: bool = False,
-    trust_remote_code: bool = True,
-    save_result: bool = True,
-    result_dir: Optional[str] = None,
-    seed: int = 0,
+    subcommand: str = "serve",
+    bench_args: Optional[Sequence[str]] = None,
     **server_kwargs,
 ) -> None:
-    """Start a vLLM server, run vLLM's official serving benchmark, then stop it.
+    """Start a vLLM server, run `vllm bench <subcommand>`, then stop the server.
 
     ``server_kwargs`` are forwarded to :func:`llm_benchmark.start_vllm_server`
     (e.g. ``quantization="awq"``, ``gpu_memory_utilization=0.90``).
+    ``bench_args`` are appended verbatim after ``vllm bench <subcommand>``.
+
+    Example:
+        benchmark_model(
+            "Qwen/Qwen2.5-3B-Instruct",
+            bench_args=[
+                "--backend", "openai",
+                "--endpoint", "/v1/completions",
+                "--model", "Qwen/Qwen2.5-3B-Instruct",
+                "--dataset-name", "random",
+                "--random-input-len", "1024",
+                "--random-output-len", "256",
+                "--num-prompts", "100",
+                "--max-concurrency", "8",
+                "--save-result",
+            ],
+        )
     """
-    from llm_benchmark.server import start_vllm_server, stop_server, wait_for_server
-
-    if dataset_name == "sonnet" and dataset_path is None:
-        dataset_path = SONNET_DATASET
-
     proc = start_vllm_server(model_id, port=port, **server_kwargs)
     try:
         wait_for_server(log_path=proc.log_path)
-        args = _namespace(
-            backend=backend,
-            host="localhost",
-            port=port,
-            endpoint="/v1/completions",
-            model=model_id,
-            tokenizer=None,
-            dataset_name=dataset_name,
-            dataset_path=dataset_path,
-            num_prompts=num_prompts,
-            random_input_len=random_input_len,
-            random_output_len=random_output_len,
-            request_rate=request_rate,
-            best_of=best_of,
-            use_beam_search=use_beam_search,
-            trust_remote_code=trust_remote_code,
-            save_result=save_result,
-            result_dir=result_dir,
-            seed=seed,
-        )
-        benchmark_serving.main(args)
+        cmd = list(bench_cmd(subcommand, *(bench_args or [])))
+        print("Running:", " ".join(cmd))
+        subprocess.run(cmd, check=False)
     finally:
         stop_server(proc)

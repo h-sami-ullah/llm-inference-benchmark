@@ -18,19 +18,23 @@ def _log_dir() -> str:
     return "/content" if os.path.isdir("/content") else os.getcwd()
 
 
-def _resolve_command(model_id: str, defaults: dict) -> List[str]:
-    """Build the vLLM CLI invocation, resolving the executable robustly.
+def vllm_cli(*args: str) -> List[str]:
+    """Build a ``vllm <args...>`` invocation, resolving the executable robustly.
 
     Prefer the `vllm` console script if it is on PATH; otherwise fall back to
     running the vLLM module with the current Python interpreter
-    (``python -m vllm serve``), which avoids ``FileNotFoundError: vllm`` when
+    (``python -m vllm ...``), which avoids ``FileNotFoundError: vllm`` when
     the entry point is not on PATH (e.g. inside a notebook kernel).
     """
     exe = shutil.which("vllm")
     if exe:
-        cmd = [exe, "serve", model_id]
-    else:
-        cmd = [sys.executable, "-m", "vllm", "serve", model_id]
+        return [exe, *args]
+    return [sys.executable, "-m", "vllm", *args]
+
+
+def _resolve_command(model_id: str, defaults: dict) -> List[str]:
+    """Build the `vllm serve <model> ...` invocation with the given flags."""
+    cmd = vllm_cli("serve", model_id)
 
     for flag, value in defaults.items():
         flag = flag.replace("_", "-")

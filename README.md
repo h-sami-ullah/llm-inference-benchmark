@@ -27,12 +27,8 @@ llm_benchmark/
 llm_benchmark_offline/
   vllm_offline.py          # offline LLM.generate() benchmark helpers
   pipeline.py              # run_full_pipeline() orchestrator (offline)
-  benchmark_throughput.py  # vLLM's offline throughput benchmark (vendored + CLI)
-  benchmark_latency.py     # vLLM's single-batch latency benchmark (vendored + CLI)
 llm_benchmark/serving/
-  backend_request_func.py  # vLLM's async request functions (vendored)
-  benchmark_serving.py     # vLLM's official serving benchmark (vendored + CLI)
-  sonnet.txt               # poem-lines dataset for --dataset-name sonnet
+  __init__.py              # benchmark_model(): vllm bench serve wrapper
 notebooks/
   inference_optimization.ipynb          # thin driver (server)
   inference_optimization_offline.ipynb  # thin driver (offline)
@@ -107,65 +103,86 @@ r = benchmark_server(8000, ["Explain quantum computing in one sentence."], name=
 stop_server(proc)
 ```
 
-## Official vLLM serving benchmark
+## Official vLLM benchmarks (`vllm bench`)
 
-vLLM's own throughput/latency benchmark is vendored (same commit as your script,
-so `backend_request_func.py` stays compatible) and wired to `start_vllm_server`.
+vLLM ships a built-in benchmark CLI (installed via the `vllm[bench]` extra), which
+supersedes the old standalone `benchmarks/*.py` scripts:
 
-Run it against a live server (server must already be running):
+- `vllm bench serve` — API server throughput/latency (online)
+- `vllm bench throughput` — engine throughput (offline)
+- `vllm bench latency` — single-batch latency (offline)
+- `vllm bench forward` — model forward-pass timing
+
+### Online (`vllm bench serve`)
+
+Start a server, then benchmark it in another terminal:
 
 ```bash
-python -m llm_benchmark.serving.benchmark_serving \
-    --backend vllm \
-    --model Qwen/Qwen2.5-3B-Instruct \
-    --dataset-name random \
-    --num-prompts 100 \
-    --save-result
+vllm serve Qwen/Qwen2.5-3B-Instruct
+
+vllm bench serve \
+  --backend openai \
+  --endpoint /v1/completions \
+  --model Qwen/Qwen2.5-3B-Instruct \
+  --dataset-name random \
+  --random-input-len 1024 \
+  --random-output-len 256 \
+  --num-prompts 100 \
+  --max-concurrency 8 \
+  --save-result
 ```
 
-Or let the package start/stop the server for you:
+Or let the package start/stop the server and run `vllm bench serve` for you:
 
 ```python
 from llm_benchmark.serving import benchmark_model
 
 benchmark_model(
     "Qwen/Qwen2.5-3B-Instruct",
-    dataset_name="random",
-    num_prompts=100,
+    bench_args=[
+        "--backend", "openai",
+        "--endpoint", "/v1/completions",
+        "--model", "Qwen/Qwen2.5-3B-Instruct",
+        "--dataset-name", "random",
+        "--random-input-len", "1024",
+        "--random-output-len", "256",
+        "--num-prompts", "100",
+        "--max-concurrency", "8",
+        "--save-result",
+    ],
     # forwarded to start_vllm_server
     quantization="awq",
     gpu_memory_utilization=0.90,
 )
 ```
 
-After `pip install -e .`, a console script is also available:
-`llm-benchmark-serve --help`.
+It reports request/input/output throughput plus TTFT, TPOT (time-per-output-token),
+and ITL (inter-token latency) with mean/median/p99, and supports `--request-rate`,
+`--burstiness`, `--max-concurrency`, `--save-result`, `--save-detailed`, and many
+datasets (`random`, `sharegpt`, `sonnet`, `prefix_repetition`, `timed_trace`, ...).
 
-It reports TTFT, TPOT (time-per-output-token), ITL (inter-token latency), and
-request/input/output throughput with mean/median/p99, supporting `sharegpt`,
-`sonnet`, and `random` datasets plus configurable Poisson request rates.
-The bundled `sonnet.txt` is used automatically for `dataset_name="sonnet"`.
-
-## Official vLLM offline benchmarks
-
-vLLM's offline (in-process `LLM`) throughput and latency scripts are also
-vendored under `llm_benchmark_offline`:
+### Offline (`vllm bench throughput` / `vllm bench latency`)
 
 ```bash
-# Offline throughput (requests/s and tokens/s), ShareGPT or synthetic input
-python -m llm_benchmark_offline.benchmark_throughput \
-    --backend vllm --model Qwen/Qwen2.5-3B-Instruct \
-    --input-len 1024 --output-len 128 --num-prompts 100 \
-    --quantization awq
+vllm bench throughput --model Qwen/Qwen2.5-3B-Instruct \
+  --dataset-name random --random-input-len 1024 --random-output-len 128 --num-prompts 100
 
-# Single-batch latency (percentiles of end-to-end latency)
-python -m llm_benchmark_offline.benchmark_latency \
-    --model Qwen/Qwen2.5-3B-Instruct --batch-size 8 \
-    --input-len 32 --output-len 128
+vllm bench latency --model Qwen/Qwen2.5-3B-Instruct \
+  --batch-size 8 --input-len 32 --output-len 128
 ```
 
-Or via the console scripts: `llm-benchmark-throughput` and
-`llm-benchmark-latency`.
+Or via the thin wrappers:
+
+```python
+from llm_benchmark_offline import benchmark_throughput, benchmark_latency
+
+benchmark_throughput(["--model", "Qwen/Qwen2.5-3B-Instruct", "--dataset-name", "random"])
+benchmark_latency(["--model", "Qwen/Qwen2.5-3B-Instruct", "--batch-size", "8"])
+```
+
+For production load testing with live progress and automatic report generation,
+see [GuideLLM](https://github.com/vllm-project/guidellm)
+(`pip install "guidellm[recommended]"`).
 
 ## Notes
 
