@@ -84,9 +84,10 @@ def start_vllm_server(
     Notes on defaults vs. current vLLM guidance
     (https://github.com/vllm-project/vllm):
 
-    * ``enforce_eager=True`` disables CUDA graphs. vLLM enables them by default
-      for higher throughput; we keep eager mode as the safe default for
-      portability (e.g. Colab T4) — pass ``enforce_eager=False`` for max TPS.
+    * CUDA graphs are left enabled (``enforce_eager`` defaults to False), as
+      vLLM enables them by default for far lower TTFT and higher throughput —
+      especially for speculative decoding, which barely benefits without them.
+      Pass ``enforce_eager=True`` only if a platform needs it.
     * Run ``vllm download-kernels`` once after installing/upgrading vLLM to avoid
       downloading and compiling kernels on first startup (adds minutes on
       Hopper+ GPUs).
@@ -95,7 +96,7 @@ def start_vllm_server(
         "dtype": "float16",
         "max_model_len": 2048,
         "gpu_memory_utilization": 0.85,
-        "enforce_eager": True,
+        "enforce_eager": False,
         "tensor_parallel_size": 1,
         "distributed_executor_backend": "uni",
         "port": port,
