@@ -8,21 +8,32 @@ version = "0.1.0"
 description = "Benchmark LLM inference optimizations (HuggingFace + vLLM OpenAI server)"
 readme = "README.md"
 requires-python = ">=3.11"
+
+# Light, portable dependencies only. GPU/CUDA packages (torch, vllm, ...) are
+# intentionally NOT here: they need platform-specific CUDA wheels and would
+# otherwise make `uv sync` / `pip install -e .` try to build them from source.
 dependencies = [
+    "requests",
+    "openai",
+    "aiohttp",
+    "tqdm",
+    "pandas",
+    "numpy",
+    "matplotlib",
+    "nvidia-ml-py3",
+    "huggingface-hub",
+]
+
+[project.optional-dependencies]
+# Install with a CUDA-capable PyTorch index, e.g.:
+#   uv sync --extra gpu --torch-backend=auto
+#   pip install -e '.[gpu]'
+gpu = [
     "torch",
     "transformers",
     "accelerate",
     "vllm",
     "autoawq",
-    "openai",
-    "requests",
-    "pandas",
-    "matplotlib",
-    "numpy",
-    "nvidia-ml-py3",
-    "aiohttp",
-    "huggingface-hub",
-    "tqdm",
 ]
 
 [project.scripts]

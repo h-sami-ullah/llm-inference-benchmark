@@ -20,6 +20,10 @@ nul
 build_video.py
 voiceover_script.md
 
+# SSH keys
+colab
+colab.pub
+
 # OS / editor
 .DS_Store
 Thumbs.db
