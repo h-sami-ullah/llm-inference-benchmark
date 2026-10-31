@@ -7,25 +7,3 @@ build/
 dist/
 .venv/
 venv/
-
-# Notebooks: ignore all, then whitelist the drivers
-*.ipynb
-!notebooks/*.ipynb
-.ipynb_checkpoints/
-
-# Data / artifacts / scratch
-video_output/
-*.json
-nul
-build_video.py
-voiceover_script.md
-
-# SSH keys
-colab
-colab.pub
-
-# OS / editor
-.DS_Store
-Thumbs.db
-.idea/
-.vscode/
