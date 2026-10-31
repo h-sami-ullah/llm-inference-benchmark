@@ -40,6 +40,26 @@ def clear_memory() -> None:
     torch.cuda.synchronize()
 
 
+def free_model(model) -> None:
+    """Release a model's GPU memory by moving it to CPU, then deleting it.
+
+    A plain ``del model`` + ``torch.cuda.empty_cache()`` often leaves the weights
+    resident on the GPU (especially with ``device_map="auto"``/accelerate, which
+    keeps dispatch hooks alive). Moving to CPU first guarantees the GPU tensors
+    are freed before the next stage (e.g. launching vLLM) starts.
+    """
+    if model is None:
+        return
+    try:
+        model.to("cpu")
+    except Exception:
+        pass
+    del model
+    gc.collect()
+    torch.cuda.empty_cache()
+    torch.cuda.synchronize()
+
+
 def set_seed(seed: int = 42) -> None:
     random.seed(seed)
     np.random.seed(seed)

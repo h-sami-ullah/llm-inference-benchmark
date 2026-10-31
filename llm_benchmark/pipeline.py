@@ -4,7 +4,7 @@ from typing import List
 
 import torch
 
-from .benchmark import BenchmarkResult, clear_memory, format_ttft, get_memory_usage
+from .benchmark import BenchmarkResult, clear_memory, format_ttft, free_model, get_memory_usage
 from .config import (
     DRAFT_MODEL_ID,
     LONG_PROMPTS,
@@ -37,9 +37,9 @@ def run_hf_baseline(results: List[BenchmarkResult]) -> BenchmarkResult:
     print(f"TPM: {result.tpm:.0f} tokens/min")
     print(f"Memory: {result.memory_gb:.2f} GB")
 
-    del model, tokenizer
+    free_model(model)
+    del tokenizer
     clear_memory()
-    torch.cuda.empty_cache()
     print(f"Memory after cleanup: {get_memory_usage():.2f} GB")
     return result
 

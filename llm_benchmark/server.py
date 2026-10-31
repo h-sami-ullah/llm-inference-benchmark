@@ -94,7 +94,7 @@ def start_vllm_server(
     defaults = {
         "dtype": "float16",
         "max_model_len": 2048,
-        "gpu_memory_utilization": 0.90,
+        "gpu_memory_utilization": 0.85,
         "enforce_eager": True,
         "tensor_parallel_size": 1,
         "distributed_executor_backend": "uni",

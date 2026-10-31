@@ -10,6 +10,7 @@ from .benchmark import (
     clear_memory,
     display_results,
     format_ttft,
+    free_model,
     get_memory_usage,
     set_seed,
 )
@@ -27,6 +28,7 @@ __all__ = [
     "clear_memory",
     "display_results",
     "format_ttft",
+    "free_model",
     "get_client",
     "get_memory_usage",
     "load_hf_model",
