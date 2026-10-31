@@ -33,7 +33,13 @@ def measure_ttft_streaming(
     messages: List[dict],
     max_tokens: int,
 ) -> Optional[float]:
-    """Host-observed TTFT: time from request start to first non-empty content delta."""
+    """Host-observed TTFT: time from request start to first non-empty content delta.
+
+    The stream is always closed (via ``finally``) once the first token is seen —
+    leaving it open leaks the HTTP connection and makes the server keep
+    generating tokens for a request nobody is reading, which eventually exhausts
+    the client's connection pool and hangs the benchmark.
+    """
     start = time.perf_counter()
     stream = client.chat.completions.create(
         model=model_name,
@@ -42,9 +48,12 @@ def measure_ttft_streaming(
         temperature=0.0,
         stream=True,
     )
-    for chunk in stream:
-        if chunk.choices and chunk.choices[0].delta and chunk.choices[0].delta.content:
-            return (time.perf_counter() - start) * 1000.0
+    try:
+        for chunk in stream:
+            if chunk.choices and chunk.choices[0].delta and chunk.choices[0].delta.content:
+                return (time.perf_counter() - start) * 1000.0
+    finally:
+        stream.close()
     return None
 
 

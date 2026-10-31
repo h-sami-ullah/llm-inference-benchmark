@@ -100,6 +100,10 @@ def start_vllm_server(
         "distributed_executor_backend": "uni",
         "port": port,
         "trust_remote_code": True,
+        # Don't let the model's generation_config.json override our explicit
+        # sampling params (e.g. temperature=0.0 greedy) — keeps results
+        # reproducible across models.
+        "generation_config": "vllm",
     }
     defaults.update(kwargs)
 
