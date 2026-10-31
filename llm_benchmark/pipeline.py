@@ -46,7 +46,7 @@ def run_hf_baseline(results: List[BenchmarkResult]) -> BenchmarkResult:
 
 def run_vllm_fp16(results: List[BenchmarkResult]) -> BenchmarkResult:
     proc = start_vllm_server(MODEL_ID)
-    wait_for_server()
+    wait_for_server(log_path=proc.log_path)
 
     result = benchmark_server(SERVER_PORT, TEST_PROMPTS, name="vLLM Server (FP16)")
     results.append(result)
@@ -74,7 +74,7 @@ def run_awq_and_flash(results: List[BenchmarkResult]) -> None:
         quantization="awq",
         gpu_memory_utilization=0.80,
     )
-    wait_for_server()
+    wait_for_server(log_path=proc.log_path)
 
     # 3. AWQ
     awq_result = benchmark_server(SERVER_PORT, TEST_PROMPTS, name="vLLM Server + AWQ")
@@ -117,7 +117,7 @@ def run_prefix_caching(results: List[BenchmarkResult]) -> None:
         max_model_len=4096,
         enable_prefix_caching=True,
     )
-    wait_for_server()
+    wait_for_server(log_path=proc.log_path)
 
     print("Running prefix caching benchmark...")
     cold_result = benchmark_server(
@@ -149,7 +149,7 @@ def run_speculative(results: List[BenchmarkResult]) -> None:
         speculative_model=DRAFT_MODEL_ID,
         num_speculative_tokens=4,
     )
-    wait_for_server()
+    wait_for_server(log_path=proc.log_path)
 
     spec_result = benchmark_server(SERVER_PORT, TEST_PROMPTS, name="vLLM Server + AWQ + Spec")
     results.append(spec_result)
@@ -180,7 +180,7 @@ def run_combined(results: List[BenchmarkResult]) -> BenchmarkResult:
         speculative_model=DRAFT_MODEL_ID,
         num_speculative_tokens=4,
     )
-    wait_for_server()
+    wait_for_server(log_path=proc.log_path)
 
     print("\nOptimizations enabled:")
     print("  [x] Continuous Batching (vLLM default)")
