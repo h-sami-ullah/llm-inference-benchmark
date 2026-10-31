@@ -22,33 +22,18 @@ from .config import (
     SHARED_PREFIX,
     TEST_PROMPTS,
 )
-from .hf import benchmark_hf, load_hf_model
+from .hf import run_hf_baseline_isolated
 from .server import start_vllm_server, stop_server, wait_for_server
 from .server_benchmark import benchmark_server
 from .storage import save_results_to_file
 
 
 def run_hf_baseline(results: List[BenchmarkResult]) -> BenchmarkResult:
-    print("Loading model with HuggingFace (FP16)...")
-    clear_memory()
-    model, tokenizer = load_hf_model(MODEL_ID)
-    print(f"Model loaded. Memory: {get_memory_usage():.2f} GB")
-
-    result = benchmark_hf(model, tokenizer, TEST_PROMPTS)
+    # Run in a subprocess so the HF model's GPU memory is fully reclaimed.
+    result = run_hf_baseline_isolated(MODEL_ID)
     results.append(result)
     save_results_to_file(results)
-
-    print(f"\n--- HuggingFace Baseline Results ---")
-    print(f"TTFT: {format_ttft(result.ttft_ms)}")
-    print(f"TPS: {result.tps:.1f} tokens/sec")
-    print(f"TPM: {result.tpm:.0f} tokens/min")
-    print(f"Memory: {result.memory_gb:.2f} GB")
-
-    free_model(model)
-    del model
-    del tokenizer
-    clear_memory()
-    print(f"Memory after cleanup: {gpu_memory_report()}")
+    print(f"Memory after HF baseline: {gpu_memory_report()}")
     return result
 
 

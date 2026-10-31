@@ -1,6 +1,11 @@
 """HuggingFace Transformers baseline benchmark."""
 
+import json
+import os
 import statistics
+import subprocess
+import sys
+import tempfile
 import threading
 import time
 from typing import List, Tuple
@@ -199,3 +204,31 @@ def benchmark_hf(
         total_tokens=int(round(avg_tokens)),
         total_time_s=avg_time,
     )
+
+
+def run_hf_baseline_isolated(model_id: str, num_runs: int = 3) -> BenchmarkResult:
+    """Run the HF baseline in a subprocess and return its result.
+
+    The model lives and dies inside ``llm_benchmark.hf_worker``, so its GPU
+    memory is fully released by the OS when the subprocess exits — avoiding
+    notebook hidden references (``Out``/``_``, tracebacks, device_map hooks)
+    that otherwise keep the weights resident and OOM the next stage.
+    """
+    out_path = os.path.join(tempfile.gettempdir(), "hf_baseline_result.json")
+    cmd = [
+        sys.executable,
+        "-m",
+        "llm_benchmark.hf_worker",
+        "--model",
+        model_id,
+        "--output",
+        out_path,
+        "--num-runs",
+        str(num_runs),
+    ]
+    print("Running HuggingFace baseline in a subprocess (isolated GPU memory)...")
+    subprocess.run(cmd, check=True)
+
+    with open(out_path) as f:
+        data = json.load(f)
+    return BenchmarkResult(**data)
