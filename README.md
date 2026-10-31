@@ -1,5 +1,14 @@
 # LLM Inference Optimization Benchmark
 
+Take an open-source model — **Qwen 2.5, 3B parameters** — and push its inference speed
+as far as we can on a single **16 GB GPU**, the kind you get on a Colab T4.
+
+After every change we measure three things:
+
+- **Time to First Token (TTFT)** — how long you wait before the answer starts.
+- **Tokens per second (TPS)** — how fast the answer streams out.
+- **GPU memory** — we can never exceed that 16 GB budget.
+
 Reusable Python package for benchmarking LLM inference optimizations, with a thin
 notebook driver on top.
 
