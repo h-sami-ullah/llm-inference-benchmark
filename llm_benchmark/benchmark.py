@@ -67,14 +67,17 @@ def free_model(model) -> None:
 
 
 def gpu_memory_report() -> str:
-    """Human-readable GPU memory breakdown (allocated / reserved / NVML used)."""
+    """Human-readable GPU memory breakdown (allocated / reserved / peak / NVML)."""
     try:
         allocated = torch.cuda.memory_allocated() / 1e9
         reserved = torch.cuda.memory_reserved() / 1e9
+        peak_allocated = torch.cuda.max_memory_allocated() / 1e9
+        peak_reserved = torch.cuda.max_memory_reserved() / 1e9
     except Exception:
-        allocated = reserved = float("nan")
+        allocated = reserved = peak_allocated = peak_reserved = float("nan")
     return (
         f"allocated {allocated:.2f} GB, reserved {reserved:.2f} GB, "
+        f"peak {peak_allocated:.2f}/{peak_reserved:.2f} GB, "
         f"nvml used {get_memory_usage():.2f} GB"
     )
 
