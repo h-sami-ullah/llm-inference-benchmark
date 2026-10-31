@@ -9,3 +9,6 @@ pandas
 matplotlib
 numpy
 nvidia-ml-py3
+aiohttp
+huggingface-hub
+tqdm

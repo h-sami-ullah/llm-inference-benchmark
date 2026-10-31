@@ -20,7 +20,13 @@ dependencies = [
     "matplotlib",
     "numpy",
     "nvidia-ml-py3",
+    "aiohttp",
+    "huggingface-hub",
+    "tqdm",
 ]
+
+[project.scripts]
+llm-benchmark-serve = "llm_benchmark.serving.benchmark_serving:cli"
 
 [tool.setuptools.packages.find]
 include = ["llm_benchmark*"]

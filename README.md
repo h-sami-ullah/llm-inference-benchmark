@@ -27,6 +27,9 @@ llm_benchmark/
 llm_benchmark_offline/
   vllm_offline.py      # offline LLM.generate() benchmark helpers
   pipeline.py          # run_full_pipeline() orchestrator (offline)
+llm_benchmark/serving/
+  backend_request_func.py  # vLLM's async request functions (vendored)
+  benchmark_serving.py     # vLLM's official serving benchmark (vendored + CLI)
 notebooks/
   inference_optimization.ipynb          # thin driver (server)
   inference_optimization_offline.ipynb  # thin driver (offline)
@@ -71,6 +74,44 @@ wait_for_server()
 r = benchmark_server(8000, ["Explain quantum computing in one sentence."], name="FP16")
 stop_server(proc)
 ```
+
+## Official vLLM serving benchmark
+
+vLLM's own throughput/latency benchmark is vendored (same commit as your script,
+so `backend_request_func.py` stays compatible) and wired to `start_vllm_server`.
+
+Run it against a live server (server must already be running):
+
+```bash
+python -m llm_benchmark.serving.benchmark_serving \
+    --backend vllm \
+    --model Qwen/Qwen2.5-3B-Instruct \
+    --dataset-name random \
+    --num-prompts 100 \
+    --save-result
+```
+
+Or let the package start/stop the server for you:
+
+```python
+from llm_benchmark.serving import benchmark_model
+
+benchmark_model(
+    "Qwen/Qwen2.5-3B-Instruct",
+    dataset_name="random",
+    num_prompts=100,
+    # forwarded to start_vllm_server
+    quantization="awq",
+    gpu_memory_utilization=0.90,
+)
+```
+
+After `pip install -e .`, a console script is also available:
+`llm-benchmark-serve --help`.
+
+It reports TTFT, TPOT (time-per-output-token), ITL (inter-token latency), and
+request/input/output throughput with mean/median/p99, supporting `sharegpt`,
+`sonnet`, and `random` datasets plus configurable Poisson request rates.
 
 ## Notes
 
