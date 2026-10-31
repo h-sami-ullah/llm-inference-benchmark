@@ -40,9 +40,17 @@ notebooks/
 
 ## Install
 
+Requires Python 3.11+.
+
 ```bash
+pip install vllm
+vllm download-kernels  # precompiled kernels -> faster startup (Hopper+ especially)
 pip install -e .
 ```
+
+The plain startup command is just `vllm serve <model>` (OpenAI-compatible,
+`http://localhost:8000` by default). This package wraps that same command via
+`start_vllm_server()`, adding stable defaults (see `llm_benchmark/server.py`).
 
 ## Usage (in a notebook or script)
 

@@ -76,6 +76,16 @@ def start_vllm_server(
 
     With ``verbose=True`` (default), server logs are streamed to the console in
     addition to being written to ``<log_dir>/vllm_server_<port>.log``.
+
+    Notes on defaults vs. current vLLM guidance
+    (https://github.com/vllm-project/vllm):
+
+    * ``enforce_eager=True`` disables CUDA graphs. vLLM enables them by default
+      for higher throughput; we keep eager mode as the safe default for
+      portability (e.g. Colab T4) — pass ``enforce_eager=False`` for max TPS.
+    * Run ``vllm download-kernels`` once after installing/upgrading vLLM to avoid
+      downloading and compiling kernels on first startup (adds minutes on
+      Hopper+ GPUs).
     """
     defaults = {
         "dtype": "float16",
